@@ -15,3 +15,7 @@ $ pip3 install -r requirements.txt
 ```
 $ ./main
 ```
+
+# Note
+I do not promoting any illigal activity. 
+*please do not use without permissions!*
