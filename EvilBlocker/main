@@ -1,0 +1,154 @@
+#! /usr/bin/env python3
+from src.device import Device
+from src.blocker import Blocker
+from src.scanner import Scanner
+from sys import platform
+import os
+import ctypes
+import socket
+from termcolor import colored
+import time
+
+
+def isWin32():
+    return platform.lower() == "win32"
+
+
+def isAdmin():
+    if ctypes.windll.shell32.IsUserAnAdmin() == 0:
+        print(colored("[!] Run As Admin.", 'red'))
+        exit(-1)
+
+
+def isSudo():
+    if os.getuid() != 0:
+        print(colored("[!] Run As Sudo.", "red"))
+        exit(-1)
+
+
+def getLocalIP():
+    st = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        st.connect(('10.255.255.255', 1))
+        IP = st.getsockname()[0]
+    except Exception:
+        IP = '127.0.0.1'
+    finally:
+        st.close()
+    return IP
+
+
+def clearScreen():
+    if isWin32():
+        os.system("cls")
+    else:
+        os.system("clear")
+
+
+def getNetworkIP():
+    ipArr = getLocalIP().split(".")
+    ipArr[3] = "0/24"
+    ip = ""
+    for a in ipArr:
+        ip += a+"."
+    return ip[:-1]
+
+
+def scanHosts():
+    s = Scanner(getNetworkIP())
+    s.scan()
+    return s.clients
+
+
+def block(router, target):
+    b = Blocker(router, target)
+    b.start()
+
+
+def commandHandler(hosts: list):
+    commands = ["help", "exit", "block", "clear"]
+    mapper = {"exit": exit, "block": block, "clear": clearScreen}
+    while True:
+        command = input("$ command [help] # ").lower()
+        if command in commands:
+            if command == "block":
+                for i in range(len(hosts)):
+                    print(f"[{i}] | {hosts[i].ip} <-> {hosts[i].mac}")
+                while True:
+                    targetIndex = int(input("[?] Target [index] >> "))
+                    if targetIndex > len(hosts)-1 or targetIndex < 0:
+                        print(colored("[!] Enter a valid index.", "red"))
+                    else:
+                        break
+                target = hosts[targetIndex]
+                mapper[command](hosts[0], target)
+            elif command == "help":
+                print("""
+        Evil Blocker❤️
+        A simple python script that allows you to block
+        any client from your WIFI!
+
+        Commands & Usage:
+            help    -> Show this message.
+            clear   -> Clear the screen.
+            block   -> Block another device.
+            exit    -> Close the program and relaese all blocked devices.
+                """)
+            elif command == "exit":
+                clearScreen()
+                print(colored("\nClosed.", "red"))
+                print(colored("\tGoodbye❤️", "green"))
+                exit()
+            else:
+                mapper[command]()
+        else:
+            print(colored("[!] Command does not exists.\n Use help.", "red"))
+
+
+def main():
+    isAdmin() if isWin32() else isSudo()
+    print(colored(f"Found private IP address >> {getLocalIP()}", "yellow"))
+    netIp = getNetworkIP()
+    print(colored(f"Found network IP address >> {netIp}\n", "yellow"))
+    print(colored("[+] Scanning Hosts...\n\n", "yellow"))
+    hosts = scanHosts()
+    router = hosts[0]
+    clearScreen()
+    print("[+] Found >> ")
+    for i in range(len(hosts)):
+        print(colored(f"[{i}] | {hosts[i].ip} <-> {hosts[i].mac}", "green"))
+    while True:
+        targetIndex = int(input("[?] Target [index] >> "))
+        if targetIndex > len(hosts)-1 or targetIndex < 0:
+            print(colored("[!] Enter a valid index.", "red"))
+        else:
+            break
+    target = hosts[targetIndex]
+    print(colored(f"[!] Target has been set to >> {target.ip}", "yellow"))
+    input("[*] Enter to start >> ")
+    block(router, target)
+    commandHandler(hosts)
+
+
+def printLOGO():
+    print("""
+  ____           _      _
+ / ___| ___   __| |__  (_) | ___
+| |  _ / _ \ / _` | / /| | |/ _ \.
+| |_| | (_) | (_| |/ /_| | | (_) |
+ \____|\___/ \__,_/____|_|_|\___/
+  """)
+    print(colored("\n CTRL+C TO CLOSE AT ANY POINT !!!", "red"))
+    print("\n\n")
+
+
+if __name__ == "__main__":
+    try:
+        printLOGO()
+        main()
+    except KeyboardInterrupt:
+        clearScreen()
+        print(colored("\nClosed.", "red"))
+        print(colored("\tCYA❤️", "green"))
+        print("\n\n")
+        exit(0)
