@@ -17,5 +17,5 @@ $ ./main
 ```
 
 # Note
-I do not promoting any illigal activity. 
-*please do not use without permissions!*
+*I do not promoting any illigal activity.<br>
+please do not use without permissions!*
