@@ -12,6 +12,11 @@ $ pip3 install -r requirements.txt
 ```
 
 # How To Use
+Give Execute Permissions:
+```
+$ chmod +x main
+```
+Run:
 ```
 $ ./main
 ```
